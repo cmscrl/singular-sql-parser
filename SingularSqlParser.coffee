@@ -13,7 +13,7 @@ class SingularSqlParser extends Chevrotain.Parser
         
         binaryOperator = Chevrotain.createToken
             name : 'binaryOperator'
-            pattern : /\|\||\*|\/|%|\+|-|<<|>>|&|\||<|<=|>|>=|=|==|\!=|<>|(is|is not|in|like|glob|match|regexp|and|or)(?!\w)/i
+            pattern : /\|(\|)?|\*|\/|%|\+|-|<(<|=|>)?|>(>|=)?|&|=(=)?|\!=|(is|in|like|glob|match|regexp|and|or)(?!\w)/i
 
         comma = Chevrotain.createToken
             name : 'comma'
@@ -41,7 +41,7 @@ class SingularSqlParser extends Chevrotain.Parser
 
         numericLiteral = Chevrotain.createToken
             name : 'numericLiteral',
-            pattern : /\d+(?!\w)/
+            pattern : /0x(\d|[ABCDEF])+|((\d+(\.\d*)?)|(\.\d+))(E(\+|-)?\d+)?(?!\w)/i
 
         nullLiteral = Chevrotain.createToken
             name : 'nullLiteral'
@@ -67,9 +67,13 @@ class SingularSqlParser extends Chevrotain.Parser
             name : 'suffixOperator'
             pattern : /(isnull|notnull)(?!\w)/i
         
+        unaryBinaryOperator = Chevrotain.createToken
+            name : 'unaryBinaryOperator'
+            pattern : /-|\+/
+
         unaryOperator = Chevrotain.createToken
             name : 'unaryOperator'
-            pattern : /-|\+|~|not(?!\w)/i
+            pattern : /~|not(?!\w)/i
 
         where = Chevrotain.createToken
             name : 'where'
@@ -95,6 +99,7 @@ class SingularSqlParser extends Chevrotain.Parser
             rparen
             suffixOperator
             star
+            unaryBinaryOperator
             binaryOperator
             unaryOperator
             nullLiteral
@@ -195,25 +200,21 @@ class SingularSqlParser extends Chevrotain.Parser
             return result
 
         @RULE 'exprCore', () =>
-            result = ''
+            result = @SUBRULE1 @expr
 
-            @OPTION1 () =>
-                result = "#{@CONSUME(unaryOperator).image} "
-
-            result += @SUBRULE @expr
-
-            @OPTION2 () =>
+            @MANY () =>
                 @OR [
                     {
                         ALT : () =>
                             result += " #{@CONSUME(binaryOperator).image}"
-                            result += " #{@SUBRULE @exprCore}"
                     }
                     {
                         ALT : () =>
-                            result += " #{@CONSUME(suffixOperator).image}"
+                            result += " #{@CONSUME(unaryBinaryOperator).image}"
                     }
                 ]
+
+                result += " #{@SUBRULE2 @expr}"
 
             return result
 
@@ -221,6 +222,16 @@ class SingularSqlParser extends Chevrotain.Parser
             result = ''
 
             @OR [
+                {
+                    ALT : () =>
+                        result = "#{@CONSUME(unaryOperator).image}"
+                        result += " #{@SUBRULE1 @expr}"
+                }
+                {
+                    ALT : () =>
+                        result = "#{@CONSUME(unaryBinaryOperator).image}"
+                        result += " #{@SUBRULE2 @expr}"
+                }
                 {
                     ALT : () =>
                         result = @SUBRULE @literalValue
