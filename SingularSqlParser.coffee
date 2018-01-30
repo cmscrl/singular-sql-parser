@@ -108,38 +108,42 @@ class SingularSqlParser extends Chevrotain.Parser
         @lexer = new Chevrotain.Lexer tokens
 
         @RULE 'selectCore', () =>
-            result = "#{@CONSUME(select).image} "
+            statement = "#{@CONSUME(select).image} "
 
             @OPTION1 () =>
                 @OR [
                     {
                         ALT : () =>
-                            result += "#{@CONSUME(all).image} "
+                            statement += "#{@CONSUME(all).image} "
                     }
                     {
                         ALT : () =>
-                            result += "#{@CONSUME(distinct).image} "
+                            statement += "#{@CONSUME(distinct).image} "
                     }
                 ]
 
             values = []
+            columns = []
 
             @AT_LEAST_ONE_SEP1
                 SEP : comma,
                 DEF : () =>
-                    values.push @SUBRULE @resultColumn
+                    rule = @SUBRULE @resultColumn
 
-            result += values.join ', '
+                    values.push rule.statement
+                    columns.push rule.column
+
+            statement += values.join ', '
 
             if @table?
-                result += " FROM #{@table}"
+                statement += " FROM #{@table}"
 
             @OPTION2 () =>
-                result += " #{@CONSUME(where).image}"
-                result += " #{@SUBRULE1 @exprCore}"
+                statement += " #{@CONSUME(where).image}"
+                statement += " #{@SUBRULE1 @exprCore}"
 
             @OPTION3 () =>
-                result += " #{@CONSUME(groupby).image} "
+                statement += " #{@CONSUME(groupby).image} "
 
                 values = []
 
@@ -148,31 +152,45 @@ class SingularSqlParser extends Chevrotain.Parser
                     DEF : () =>
                         values.push @SUBRULE2 @exprCore
 
-                result += values.join ', '
+                statement += values.join ', '
 
                 @OPTION4 () =>
-                    result += " #{@CONSUME(having).image}"
-                    result += " #{@SUBRULE3 @exprCore}"
+                    statement += " #{@CONSUME(having).image}"
+                    statement += " #{@SUBRULE3 @exprCore}"
+
+            result =
+                statement : statement
+                columns : columns
 
             return result
 
         @RULE 'resultColumn', () =>
-            result = ''
+            statement = ''
+            column = ''
 
             @OR [
                 {
                     ALT : () =>
-                        result = @SUBRULE @exprCore
+                        statement = @SUBRULE @exprCore
+                        column = statement
 
                         @OPTION () =>
-                            result += " #{@CONSUME(as).image}"
-                            result += " #{@CONSUME(identifier).image}"
+                            statement += " #{@CONSUME(as).image}"
+
+                            column = @CONSUME(identifier).image
+
+                            statement += " #{column}"
                 }
                 {
                     ALT : () =>
-                        result = @CONSUME(star).image
+                        statement = @CONSUME(star).image
+                        column = statement
                 }
             ]
+
+            result =
+                statement : statement
+                column : column
 
             return result
 
