@@ -298,6 +298,8 @@ class SingularSqlParser extends Chevrotain.Parser
     parse : (input, @table = null) =>
         lex = @lexer.tokenize input
 
+        console.log JSON.stringify lex
+
         @input = lex.tokens
         result = @selectCore()
 
