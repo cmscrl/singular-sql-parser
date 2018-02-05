@@ -6,7 +6,7 @@
   },
   "description": "Singular SQL Parser is a parser for Singular SQL, a subset of the standard SQL aimed at single table querying.",
   "license": "MIT",
-  "main": "SingularSqlParser.coffee",
+  "main": "index.coffee",
   "name": "singular-sql-parser",
   "repository": {
     "type": "git",
