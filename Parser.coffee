@@ -196,7 +196,7 @@ class Parser
 
     parser = new SingularSQLParser()
 
-    parse : (statement) ->
+    @parse = (statement) ->
         parser.input = Lexer.tokenize(statement).tokens
         parser.table = null
 
@@ -207,7 +207,7 @@ class Parser
 
         return result
 
-    toSQL : (statement, table = '"table"') ->
+    @toSQL = (statement, table = '"table"') ->
         parser.input = Lexer.tokenize(statement).tokens
         parser.table = table
 
