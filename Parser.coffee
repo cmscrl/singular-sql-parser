@@ -111,6 +111,10 @@ class Parser
                         }
                         {
                             ALT : () =>
+                                result += " #{@CONSUME(Lexer.symbols.star).image}"
+                        }
+                        {
+                            ALT : () =>
                                 result += " #{@CONSUME(Lexer.symbols.unaryOrBinaryOperator).image}"
                         }
                     ]
